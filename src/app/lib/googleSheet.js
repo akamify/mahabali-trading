@@ -85,6 +85,40 @@ export async function findRowByLeadId(leadId) {
 }
 
 // ✅ Mark a single cell (e.g. J12 = "yes")
+// Find existing lead row by phone/email (prevents duplicate submissions)
+export async function findExistingLeadRow({ phone10, email }) {
+  const p = String(phone10 || "").trim();
+  const e = String(email || "")
+    .trim()
+    .toLowerCase();
+
+  if (!p && !e) return null;
+
+  const sheets = await getSheets();
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId: process.env.GOOGLE_SHEET_ID,
+    // C=email, D=phone. Start at row 2 to skip headers.
+    range: "Sheet1!C2:D",
+  });
+
+  const rows = res.data.values || [];
+  for (let i = 0; i < rows.length; i++) {
+    const rowEmail = String(rows[i]?.[0] || "")
+      .trim()
+      .toLowerCase();
+    const rowPhone = String(rows[i]?.[1] || "").trim();
+
+    if ((p && rowPhone === p) || (e && rowEmail === e)) {
+      return {
+        rowNumber: i + 2, // because we started at row 2
+        matchedBy: p && rowPhone === p ? "phone" : "email",
+      };
+    }
+  }
+
+  return null;
+}
+
 export async function markCell(rowNumber, columnLetter, value) {
   const sheets = await getSheets();
 

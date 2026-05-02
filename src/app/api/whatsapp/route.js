@@ -2,7 +2,7 @@
 import { NextResponse } from "next/server";
 import { cleanPhone10 } from "../../lib/phone";
 import { validateForm } from "../../lib/validate";
-import { saveToSheet, markCell } from "../../lib/googleSheet";
+import { saveToSheet, markCell, findExistingLeadRow } from "../../lib/googleSheet";
 import { sendConfirmation, send2DayReminder, sendMorningReminder, send10MinReminder, sendLiveNow } from "../../lib/mart2meta";
 import { getQstashTargetUrl, publishScheduled, toEpochSeconds } from "../../lib/qstash";
 import fs from "fs";
@@ -179,6 +179,18 @@ export async function POST(req) {
       return NextResponse.json(
         { success: false, message: "webinarISO missing / invalid webinar date-time" },
         { status: 400 }
+      );
+    }
+
+    // Prevent duplicate submissions (same phone/email already exists in Sheet)
+    const existing = await findExistingLeadRow({
+      phone10,
+      email: normalized.email,
+    });
+    if (existing?.rowNumber) {
+      return NextResponse.json(
+        { success: false, message: "You have already submitted form." },
+        { status: 409 }
       );
     }
 
