@@ -119,12 +119,12 @@ export async function findExistingLeadRow({ phone10, email }) {
   return null;
 }
 
-export async function markCell(rowNumber, columnLetter, value) {
+export async function markCell(rowNumber, columnLetter, value, sheetName = "Sheet1") {
   const sheets = await getSheets();
 
   await sheets.spreadsheets.values.update({
     spreadsheetId: process.env.GOOGLE_SHEET_ID,
-    range: `Sheet1!${columnLetter}${rowNumber}`,
+    range: `${sheetName}!${columnLetter}${rowNumber}`,
     valueInputOption: "RAW",
     requestBody: { values: [[value]] },
   });
@@ -152,25 +152,37 @@ export async function saveCoursePurchaseToSheet2({
   courseName,
   price,
   paymentStatus,
+  paymentId,
+  orderId,
+  invoiceNumber,
+  invoiceDate,
 }) {
   const sheets = await getSheets();
 
   const values = [[
-    formatISTDateTime(),
+    invoiceDate || formatISTDateTime(),
     name || "",
     email || "",
     phone || "",
     courseName || "Price Behaviour Mastery",
     String(price || ""),
     paymentStatus || "",
+    paymentId || "",
+    orderId || "",
+    invoiceNumber || "",
   ]];
 
-  await sheets.spreadsheets.values.append({
+  const res = await sheets.spreadsheets.values.append({
     spreadsheetId: process.env.GOOGLE_SHEET_ID,
-    range: "Sheet2!A:G",
+    range: "Sheet2!A:J",
     valueInputOption: "RAW",
     requestBody: { values },
   });
 
-  return { success: true };
+  // Example updatedRange: "Sheet2!A12:J12"
+  const updatedRange = res.data?.updates?.updatedRange || "";
+  const match = updatedRange.match(/!A(\d+):/);
+  const rowNumber = match ? Number(match[1]) : null;
+
+  return { success: true, rowNumber };
 }

@@ -34,6 +34,8 @@ export async function buildCourseInvoicePdf({
   courseName,
   gstRate: gstRateParam,
   gstNumber: gstNumberParam,
+  invoiceNumber: invoiceNumberParam,
+  invoiceDate: invoiceDateParam,
 }) {
   const pdfDoc = await PDFDocument.create();
   const page = pdfDoc.addPage([595.28, 841.89]); // A4
@@ -68,8 +70,8 @@ export async function buildCourseInvoicePdf({
   });
 
   y = height - 155;
-  const invoiceDate = formatISTDateTime();
-  const invoiceNumber = `INV-${Date.now()}`;
+  const invoiceDate = invoiceDateParam || formatISTDateTime();
+  const invoiceNumber = invoiceNumberParam || `INV-${Date.now()}`;
 
   page.drawText(`Invoice No: ${invoiceNumber}`, {
     x: margin,
@@ -214,5 +216,5 @@ export async function buildCourseInvoicePdf({
   const contentBase64 = Buffer.from(pdfBytes).toString("base64");
   const fileName = `invoice-${safe(paymentId, Date.now())}.pdf`;
 
-  return { contentBase64, fileName };
+  return { contentBase64, fileName, invoiceNumber, invoiceDate };
 }
