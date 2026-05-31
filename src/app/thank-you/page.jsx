@@ -22,7 +22,12 @@ export default function ThankYouPage() {
 
     try {
       const parsedData = JSON.parse(saved);
-      if (!parsedData.name || !parsedData.email || !parsedData.phone || !parsedData.timestamp) {
+      if (
+        !parsedData.name ||
+        !parsedData.email ||
+        !parsedData.phone ||
+        !parsedData.timestamp
+      ) {
         return null;
       }
 
@@ -98,12 +103,24 @@ export default function ThankYouPage() {
             <span className="text-4xl">✅</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-white mb-2">
-            REGISTRATION <span className="bg-gradient-to-r from-[#75c13f] to-[#5da432] bg-clip-text text-transparent">SUCCESSFUL!</span>
+            REGISTRATION{" "}
+            <span className="bg-gradient-to-r from-[#75c13f] to-[#5da432] bg-clip-text text-transparent">
+              SUCCESSFUL!
+            </span>
           </h1>
           <p className="text-gray-400 text-sm sm:text-base">
             Welcome to the community of successful traders.
           </p>
         </div>
+
+        <a
+          href={communityLink}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="w-full py-4 mb-4 bg-gradient-to-r from-[#75c13f] to-[#5da432] hover:from-[#75c13f] hover:to-[#5da432] text-gray-900 font-black uppercase tracking-tighter text-center block rounded-xl transition-all duration-300 shadow-[0_0_20px_rgba(117,193,63,0.3)] hover:shadow-[0_0_30px_rgba(117,193,63,0.5)] active:scale-95 hover:-translate-y-0.5"
+        >
+          Join WhatsApp Community
+        </a>
 
         <div className="grid gap-6 md:grid-cols-2">
           {/* Details Section */}
@@ -132,75 +149,43 @@ export default function ThankYouPage() {
               </div>
             </div>
           </div>
-
-          {/* Instructions Section */}
-          <div className="bg-white/5 rounded-2xl p-5 border border-white/5 hover:border-[#5da432]/40 transition-colors">
-            <h3 className="bg-gradient-to-r from-[#75c13f] to-[#5da432] bg-clip-text text-transparent font-bold text-xs uppercase tracking-widest mb-4">
-              Next Steps
-            </h3>
-            <ul className="space-y-3 text-sm">
-              <li className="flex gap-2">
-                <span className="bg-gradient-to-r from-[#75c13f] to-[#5da432] bg-clip-text text-transparent font-bold">01.</span>
-                <span className="text-gray-300">
-                  Check your{" "}
-                  <span className="text-white font-medium">WhatsApp</span> for
-                  the updates.
-                </span>
-              </li>
-              <li className="flex gap-2">
-                <span className="bg-gradient-to-r from-[#75c13f] to-[#5da432] bg-clip-text text-transparent font-bold">02.</span>
-                <span className="text-gray-300">
-                  Our team will contact you shortly.
-                </span>
-              </li>
-              <li className="flex gap-2">
-                <span className="bg-gradient-to-r from-[#75c13f] to-[#5da432] bg-clip-text text-transparent font-bold">03.</span>
-                <span className="text-gray-300">
-                  Join 10 mins early for the Live Session.
-                </span>
-              </li>
-            </ul>
-          </div>
-        </div>
-
-        {(data.webinarDate || data.webinarDay || data.webinarTime) && (
-          <div className="mt-6 bg-white/5 rounded-2xl p-5 border border-white/5 hover:border-[#75c13f]/40 transition-colors">
-            <h3 className="bg-gradient-to-r from-[#75c13f] to-[#5da432] bg-clip-text text-transparent font-bold text-xs uppercase tracking-widest mb-4">
-              Webinar Schedule
-            </h3>
-            <div className="grid gap-4 sm:grid-cols-3 text-sm">
-              <div>
-                <p className="text-[10px] text-gray-500 uppercase font-bold">Date</p>
-                <p className="text-sm font-semibold">{data.webinarDate || "-"}</p>
-              </div>
-              <div>
-                <p className="text-[10px] text-gray-500 uppercase font-bold">Day</p>
-                <p className="text-sm font-semibold">{data.webinarDay || "-"}</p>
-              </div>
-              <div>
-                <p className="text-[10px] text-gray-500 uppercase font-bold">Time</p>
-                <p className="text-sm font-semibold">{data.webinarTime || "-"}</p>
+          {(data.webinarDate || data.webinarDay || data.webinarTime) && (
+            <div className="bg-white/5 rounded-2xl p-5 border border-white/5 hover:border-[#75c13f]/40 transition-colors">
+              <h2 className="bg-gradient-to-r from-[#75c13f] to-[#5da432] bg-clip-text text-transparent font-bold text-xs uppercase tracking-widest mb-4">
+                Webinar Schedule
+              </h2>
+              <div className="space-y-4 ">
+                <div>
+                  <p className="text-[10px] text-gray-500 uppercase font-bold">
+                    Date
+                  </p>
+                  <p className="text-sm font-semibold">
+                    {data.webinarDate || "-"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[10px] text-gray-500 uppercase font-bold">
+                    Day
+                  </p>
+                  <p className="text-sm font-semibold">
+                    {data.webinarDay || "-"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[10px] text-gray-500 uppercase font-bold">
+                    Time
+                  </p>
+                  <p className="text-sm font-semibold">
+                    {data.webinarTime || "-"}
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Action Button */}
         <div className="mt-8">
-          <a
-            href={communityLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-full py-4 mb-4 bg-gradient-to-r from-[#75c13f] to-[#5da432] hover:from-[#75c13f] hover:to-[#5da432] text-gray-900 font-black uppercase tracking-tighter text-center block rounded-xl transition-all duration-300 shadow-[0_0_20px_rgba(117,193,63,0.3)] hover:shadow-[0_0_30px_rgba(117,193,63,0.5)] active:scale-95 hover:-translate-y-0.5"
-          >
-            Join WhatsApp Community
-          </a>
-          <Link
-            href="/"
-            className="w-full py-4 bg-gradient-to-r from-[#75c13f] to-[#5da432] hover:from-[#75c13f] hover:to-[#5da432] text-gray-900 font-black uppercase tracking-tighter text-center block rounded-xl transition-all duration-300 shadow-[0_0_20px_rgba(117,193,63,0.3)] hover:shadow-[0_0_30px_rgba(117,193,63,0.5)] active:scale-95 hover:-translate-y-0.5"
-          >
-            Go to Home
-          </Link>
           <p className="text-center text-[10px] text-gray-600 mt-4 uppercase font-bold tracking-widest">
             Mahhabali Education • India&apos;s No.1 Price Behavior Training
           </p>
