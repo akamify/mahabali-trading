@@ -3,27 +3,7 @@ import { google } from "googleapis";
 import { formatISTDateTime } from "./dateTime";
 import { cleanPhone10 } from "./phone";
 
-const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
-const IST_OFFSET_MS = (5 * 60 + 30) * 60 * 1000;
-
-function parseISTSheetTimestamp(value) {
-  const text = String(value || "").trim();
-  const match = text.match(
-    /^(\d{1,2})\/(\d{1,2})\/(\d{4}),?\s+(\d{1,2}):(\d{2}):(\d{2})\s*(am|pm)$/i
-  );
-
-  if (!match) return null;
-
-  const [, day, month, year, rawHour, minute, second, meridiem] = match;
-  let hour = Number(rawHour) % 12;
-  if (meridiem.toLowerCase() === "pm") hour += 12;
-
-  const timestamp =
-    Date.UTC(Number(year), Number(month) - 1, Number(day), hour, Number(minute), Number(second)) -
-    IST_OFFSET_MS;
-
-  return Number.isFinite(timestamp) ? timestamp : null;
-}
+const WEBINAR_RESUBMIT_GRACE_MS = 2 * 60 * 60 * 1000;
 
 function normalizeStoredPhone(value) {
   try {
@@ -31,6 +11,12 @@ function normalizeStoredPhone(value) {
   } catch {
     return "";
   }
+}
+
+function getWebinarCompletionTime(webinarISO) {
+  const webinarTime = Date.parse(String(webinarISO || "").trim());
+  if (!Number.isFinite(webinarTime)) return null;
+  return webinarTime + WEBINAR_RESUBMIT_GRACE_MS;
 }
 
 function getAuthClient() {
@@ -116,7 +102,7 @@ export async function findRowByLeadId(leadId) {
 }
 
 // ✅ Mark a single cell (e.g. J12 = "yes")
-// Find a matching lead submitted during the last week.
+// Find a matching lead whose assigned webinar has not completed yet.
 export async function findExistingLeadRow({ phone10, email }) {
   const p = String(phone10 || "").trim();
   const e = String(email || "")
@@ -128,20 +114,20 @@ export async function findExistingLeadRow({ phone10, email }) {
   const sheets = await getSheets();
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId: process.env.GOOGLE_SHEET_ID,
-    // A=timestamp, C=email, D=phone. Start at row 2 to skip headers.
-    range: "Sheet1!A2:D",
+    // C=email, D=phone, I=webinarISO. Start at row 2 to skip headers.
+    range: "Sheet1!A2:I",
   });
 
   const rows = res.data.values || [];
   for (let i = 0; i < rows.length; i++) {
-    const submittedAt = parseISTSheetTimestamp(rows[i]?.[0]);
     const rowEmail = String(rows[i]?.[2] || "")
       .trim()
       .toLowerCase();
     const rowPhone = normalizeStoredPhone(rows[i]?.[3]);
     const matchedBy = p && rowPhone === p ? "phone" : e && rowEmail === e ? "email" : null;
+    const webinarCompletionTime = getWebinarCompletionTime(rows[i]?.[8]);
 
-    if (matchedBy && (submittedAt === null || Date.now() - submittedAt < WEEK_MS)) {
+    if (matchedBy && (webinarCompletionTime === null || Date.now() < webinarCompletionTime)) {
       return {
         rowNumber: i + 2, // because we started at row 2
         matchedBy,

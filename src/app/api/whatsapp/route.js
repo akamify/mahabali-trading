@@ -182,14 +182,14 @@ export async function POST(req) {
       );
     }
 
-    // Allow one free webinar registration per phone/email every 7 days.
+    // Allow resubmission only after the assigned webinar completes plus 2 hours.
     const existing = await findExistingLeadRow({
       phone10,
       email: normalized.email,
     });
     if (existing?.rowNumber) {
       return NextResponse.json(
-        { success: false, message: "You have already submitted form this week. Please try again after 7 days." },
+        { success: false, message: "You have already submitted form for this webinar. Please try again after your webinar is completed." },
         { status: 409 }
       );
     }

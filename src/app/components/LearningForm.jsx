@@ -139,10 +139,10 @@ export default function LearningForm() {
     const webinarData = calculateWebinarData();
     const updatedFormData = {
       ...formData,
-      webinarDay: formData.webinarDay || webinarData.webinarDay,
-      webinarDate: formData.webinarDate || webinarData.webinarDate,
-      webinarTime: formData.webinarTime || webinarData.webinarTime,
-      webinarType: formData.webinarType || webinarData.webinarType,
+      webinarDay: webinarData.webinarDay,
+      webinarDate: webinarData.webinarDate,
+      webinarTime: webinarData.webinarTime,
+      webinarType: webinarData.webinarType,
     };
 
     setIsSubmitting(true);
@@ -152,50 +152,22 @@ export default function LearningForm() {
     try {
       // Ensure webinar data is populated
       if (!formData.webinarDay || !formData.webinarDate) {
-        // Calculate webinar data if not present
-        const now = new Date();
-        const day = now.getDay();
-        let webinarDateObj = new Date();
-        let webinarType = "Live Trading Webinar";
-        let webinarTime = "08:00 PM";
-
-        const SUNDAY = 0;
-        const THURSDAY = 4;
-
-        function getNextDay(targetDay) {
-          const result = new Date(now);
-          const dayDiff = (targetDay - now.getDay() + 7) % 7;
-          result.setDate(now.getDate() + (dayDiff === 0 ? 7 : dayDiff));
-          return result;
-        }
-
-        const nextSunday = getNextDay(SUNDAY);
-        const nextThursday = getNextDay(THURSDAY);
-        webinarDateObj = nextSunday < nextThursday ? nextSunday : nextThursday;
-        const webinarDay = webinarDateObj.toLocaleDateString("en-IN", {
-          weekday: "long",
-        });
-
-        const webinarDate = webinarDateObj.toLocaleDateString("en-IN", {
-          day: "2-digit",
-          month: "short",
-          year: "numeric",
-        });
+        const fallbackWebinarData = calculateWebinarData();
 
         // Update form data with webinar info
         setFormData((prev) => ({
           ...prev,
-          webinarDay,
-          webinarDate,
-          webinarTime,
-          webinarType,
+          webinarDay: fallbackWebinarData.webinarDay,
+          webinarDate: fallbackWebinarData.webinarDate,
+          webinarTime: fallbackWebinarData.webinarTime,
+          webinarType: fallbackWebinarData.webinarType,
         }));
 
         // Use the calculated data for submission
-        formData.webinarDay = webinarDay;
-        formData.webinarDate = webinarDate;
-        formData.webinarTime = webinarTime;
-        formData.webinarType = webinarType;
+        formData.webinarDay = fallbackWebinarData.webinarDay;
+        formData.webinarDate = fallbackWebinarData.webinarDate;
+        formData.webinarTime = fallbackWebinarData.webinarTime;
+        formData.webinarType = fallbackWebinarData.webinarType;
       }
 
       // Prepare phone number without country code

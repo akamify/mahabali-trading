@@ -140,10 +140,10 @@ export default function FormPage() {
     const webinarData = calculateWebinarData();
     const updatedFormData = {
       ...formData,
-      webinarDay: formData.webinarDay || webinarData.webinarDay,
-      webinarDate: formData.webinarDate || webinarData.webinarDate,
-      webinarTime: formData.webinarTime || webinarData.webinarTime,
-      webinarType: formData.webinarType || webinarData.webinarType,
+      webinarDay: webinarData.webinarDay,
+      webinarDate: webinarData.webinarDate,
+      webinarTime: webinarData.webinarTime,
+      webinarType: webinarData.webinarType,
     };
 
     setIsSubmitting(true);
