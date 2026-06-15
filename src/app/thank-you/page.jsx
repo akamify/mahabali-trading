@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 
 const communityLink =
   process.env.NEXT_PUBLIC_WHATSAPP_COMMUNITY_URL ||
-  process.env.NEXT_PUBLIC_COMMUNITY_LINK ||
-  "https://chat.whatsapp.com/LuxhsZUv1ob44a4Ze5GFn3";
+  process.env.WHATSAPP_COMMUNITY_URL ||
+  "";
 
 export default function ThankYouPage() {
   const router = useRouter();
