@@ -8,8 +8,7 @@ import { Check, Copy } from "lucide-react";
 const STORAGE_KEY = "courseThankyouData";
 const communityLink =
   process.env.NEXT_PUBLIC_COURSE_WHATSAPP_COMMUNITY_URL ||
-  process.env.NEXT_PUBLIC_COURSE_WHATSAPP_COMMUNITY_URL ||
-  "https://chat.whatsapp.com/JeoQrKP4vBOAiIEOEl5cjT";
+  process.env.COURSE_WHATSAPP_COMMUNITY_URL;
 
 export default function CourseThankYouPage() {
   const router = useRouter();
