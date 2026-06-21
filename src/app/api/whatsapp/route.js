@@ -3,13 +3,25 @@ import { NextResponse } from "next/server";
 import { cleanPhone10 } from "../../lib/phone";
 import { validateForm } from "../../lib/validate";
 import { saveToSheet, markCell, findExistingLeadRow } from "../../lib/googleSheet";
-import { sendConfirmation, send2DayReminder, sendMorningReminder, send10MinReminder, sendLiveNow } from "../../lib/mart2meta";
+import {
+  sendConfirmation,
+  send2DayReminder,
+  sendMorningReminder,
+  sendDayLinkReminder,
+  send10MinReminder,
+  sendLiveNow,
+} from "../../lib/mart2meta";
 import { getQstashTargetUrl, publishScheduled, toEpochSeconds } from "../../lib/qstash";
 import fs from "fs";
 
 // Column J = sentConfirmation
 const COL_LETTER_SENT_CONFIRM = "J";
+const COL_LETTER_SENT_DAY_LINK = "P";
 const IST_OFFSET_MIN = 5 * 60 + 30;
+const IST_OFFSET_MS = IST_OFFSET_MIN * 60 * 1000;
+const SUNDAY = 0;
+const SAME_DAY_LINK_START_HOUR_IST = 8;
+const SAME_DAY_LINK_END_HOUR_IST = 17;
 
 const MONTHS = {
   jan: 0,
@@ -87,8 +99,51 @@ function buildWebinarMorningISO(webinarDate) {
   return dt.toISOString();
 }
 
+function getCurrentISTParts() {
+  const nowIst = new Date(Date.now() + IST_OFFSET_MS);
+  return {
+    year: nowIst.getUTCFullYear(),
+    month: nowIst.getUTCMonth(),
+    date: nowIst.getUTCDate(),
+    weekday: nowIst.getUTCDay(),
+    hour: nowIst.getUTCHours(),
+  };
+}
+
+function getISTDatePartsFromISO(iso) {
+  const time = Date.parse(iso);
+  if (!Number.isFinite(time)) return null;
+  const date = new Date(time + IST_OFFSET_MS);
+  return {
+    year: date.getUTCFullYear(),
+    month: date.getUTCMonth(),
+    date: date.getUTCDate(),
+  };
+}
+
+function isSameISTDate(left, right) {
+  return (
+    left &&
+    right &&
+    left.year === right.year &&
+    left.month === right.month &&
+    left.date === right.date
+  );
+}
+
+function shouldSendSameDayLinkReminder(webinarISO) {
+  const nowIst = getCurrentISTParts();
+  const webinarIst = getISTDatePartsFromISO(webinarISO);
+
+  return (
+    nowIst.weekday === SUNDAY &&
+    nowIst.hour >= SAME_DAY_LINK_START_HOUR_IST &&
+    nowIst.hour < SAME_DAY_LINK_END_HOUR_IST &&
+    isSameISTDate(nowIst, webinarIst)
+  );
+}
+
 function buildSecondDayReminderISOFromNow() {
-  const IST_OFFSET_MS = IST_OFFSET_MIN * 60 * 1000;
   const DAY_MS = 24 * 60 * 60 * 1000;
 
   const nowUtcMs = Date.now();
@@ -225,6 +280,25 @@ export async function POST(req) {
       await markCell(rowNumber, COL_LETTER_SENT_CONFIRM, "yes");
     }
 
+    const shouldSendDayLink = shouldSendSameDayLinkReminder(webinarISO);
+    if (rowNumber && shouldSendDayLink) {
+      try {
+        await sendDayLinkReminder({
+          name: normalized.name,
+          phone10,
+          webinarDate,
+          webinarDay,
+          webinarTime,
+          templateMediaType: reminderMediaType || undefined,
+          mediaUrl: reminderMediaUrl || undefined,
+        });
+        await markCell(rowNumber, COL_LETTER_SENT_DAY_LINK, "yes");
+        console.log("SENT DAY LINK REMINDER", { rowNumber });
+      } catch (err) {
+        console.error("Day link reminder error:", err);
+      }
+    }
+
     // schedule reminders via QStash or, when testing, send immediately
     const rawReminderMode = String(readEnvValueFromDotEnv("REMINDER_TEST_MODE") ?? process.env.REMINDER_TEST_MODE ?? "");
     let reminderTestMode = rawReminderMode.toLowerCase() === "true";
@@ -261,20 +335,22 @@ export async function POST(req) {
             console.error("Immediate 2day error:", err);
           }
 
-          try {
-            await sendMorningReminder({
-              name: normalized.name,
-              phone10,
-              webinarDate,
-              webinarDay,
-              webinarTime,
-              templateMediaType: reminderMediaType || undefined,
-              mediaUrl: reminderMediaUrl || undefined,
-            });
-            await markCell(rowNumber, "L", "yes");
-            console.log("IMMEDIATE SENT MORNING", { rowNumber });
-          } catch (err) {
-            console.error("Immediate morning error:", err);
+          if (!shouldSendDayLink) {
+            try {
+              await sendMorningReminder({
+                name: normalized.name,
+                phone10,
+                webinarDate,
+                webinarDay,
+                webinarTime,
+                templateMediaType: reminderMediaType || undefined,
+                mediaUrl: reminderMediaUrl || undefined,
+              });
+              await markCell(rowNumber, "L", "yes");
+              console.log("IMMEDIATE SENT MORNING", { rowNumber });
+            } catch (err) {
+              console.error("Immediate morning error:", err);
+            }
           }
 
           try {
@@ -341,6 +417,7 @@ export async function POST(req) {
           if (Number.isNaN(webinarTs)) throw new Error("Invalid webinarISO");
           const tenMinEpoch = toEpochSeconds(new Date(webinarTs - 10 * 60 * 1000).toISOString());
           const liveEpoch = toEpochSeconds(new Date(webinarTs).toISOString());
+          const nowEpoch = Math.floor(Date.now() / 1000);
 
           const payload = {
             rowNumber,
@@ -356,16 +433,25 @@ export async function POST(req) {
             reminderMediaType: reminderMediaType || undefined,
           };
 
-          await publishScheduled({
-            url: receiverUrl,
-            body: { type: "2day", ...payload },
-            notBeforeEpochSeconds: secondDayEpoch,
-          });
-          await publishScheduled({
-            url: receiverUrl,
-            body: { type: "morning", ...payload },
-            notBeforeEpochSeconds: morningEpoch,
-          });
+          if (secondDayEpoch > nowEpoch && secondDayEpoch < tenMinEpoch) {
+            await publishScheduled({
+              url: receiverUrl,
+              body: { type: "2day", ...payload },
+              notBeforeEpochSeconds: secondDayEpoch,
+            });
+          } else {
+            console.log("SKIP SCHEDULING 2DAY", { rowNumber, secondDayEpoch, nowEpoch, tenMinEpoch });
+          }
+
+          if (!shouldSendDayLink && morningEpoch > nowEpoch && morningEpoch < tenMinEpoch) {
+            await publishScheduled({
+              url: receiverUrl,
+              body: { type: "morning", ...payload },
+              notBeforeEpochSeconds: morningEpoch,
+            });
+          } else {
+            console.log("SKIP SCHEDULING MORNING", { rowNumber, shouldSendDayLink, morningEpoch, nowEpoch, tenMinEpoch });
+          }
           await publishScheduled({
             url: receiverUrl,
             body: { type: "10min", ...payload },

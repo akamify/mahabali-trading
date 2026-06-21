@@ -35,7 +35,7 @@ async function getSheets() {
   return google.sheets({ version: "v4", auth: client });
 }
 
-// ✅ Append full row A:O and return inserted row number
+// ✅ Append full row A:P and return inserted row number
 export async function saveToSheet({
   name,
   email,
@@ -62,6 +62,7 @@ export async function saveToSheet({
     "no",                               // J sentConfirmation
     "no",                               // K sent2Day
     "no",                               // L sentMorning
+    "no",                               // P sentDayLink
     "no",                               // M sent10Min
     "no",                               // N sentLive
     leadId || "",                       // O leadId
@@ -69,12 +70,12 @@ export async function saveToSheet({
 
   const res = await sheets.spreadsheets.values.append({
     spreadsheetId: process.env.GOOGLE_SHEET_ID,
-    range: "Sheet1!A:O",
+    range: "Sheet1!A:P",
     valueInputOption: "RAW",
     requestBody: { values },
   });
 
-  // Example updatedRange: "Sheet1!A12:O12"
+  // Example updatedRange: "Sheet1!A12:P12"
   const updatedRange = res.data?.updates?.updatedRange || "";
   const match = updatedRange.match(/!A(\d+):/);
   const rowNumber = match ? Number(match[1]) : null;
@@ -157,7 +158,7 @@ export async function readAllLeads() {
 
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId: process.env.GOOGLE_SHEET_ID,
-    range: "Sheet1!A:O",
+    range: "Sheet1!A:P",
   });
 
   const rows = res.data.values || [];

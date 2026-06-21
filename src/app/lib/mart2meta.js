@@ -298,6 +298,32 @@ export async function sendMorningReminder({
     });
 }
 
+export async function sendDayLinkReminder({
+    name,
+    phone10,
+    webinarDate,
+    webinarDay,
+    webinarTime,
+    webinarLink = WEBINAR_LINK,
+    templateMediaType = process.env.MART2META_TEMPLATE_DAY_LINK_MEDIA_TYPE || process.env.MART2META_TEMPLATE_MORNING_MEDIA_TYPE || "simple",
+    mediaUrl,
+}) {
+    return sendTemplate({
+        label: "day-link-reminder",
+        templateName: required(
+            "MART2META_TEMPLATE_DAY_LINK",
+            process.env.MART2META_TEMPLATE_DAY_LINK || process.env.MART2META_TEMPLATE_MORNING
+        ),
+        phone10,
+        templateMediaType,
+        mediaUrl:
+            mediaUrl ||
+            process.env.MART2META_TEMPLATE_DAY_LINK_MEDIA_URL ||
+            process.env.MART2META_TEMPLATE_MORNING_MEDIA_URL,
+        parameters: [name, webinarDate, webinarDay, webinarTime, webinarLink],
+    });
+}
+
 export async function send10MinReminder({
     name,
     phone10,
