@@ -5,14 +5,14 @@ import {
   Pause,
   Play,
   PlayCircle,
-  ShieldCheck,
+  ShieldCheck, 
   Volume2,
   VolumeX,
 } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 
-const COURSE_PRICE = 999;
+const COURSE_PRICE = 999; 
 const STRUCK_PRICE = 24999;
 const MENTOR_VIDEO_URL = (
   process.env.NEXT_PUBLIC_MENTOR_VIDEO_URL || "/course.mp4"
