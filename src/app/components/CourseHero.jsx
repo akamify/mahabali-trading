@@ -19,7 +19,7 @@ const MENTOR_VIDEO_URL = (
 ).trim();
 
 export default function CourseHero() {
-  const router = useRouter();
+  const router = useRouter(); 
   const videoRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
